@@ -23,10 +23,32 @@ class Event
 
   def responses
     <<~EOF
-Yes: #{@accepted.join(', ')}
-No: #{@declined.join(', ')}
-Maybe: #{@maybe.join(', ')}
+Yes: #{@accepted.map(&:username).join(', ')}
+No: #{@declined.map(&:username).join(', ')}
+Maybe: #{@maybe.map(&:username).join(', ')}
     EOF
+  end
+
+  def accept(user)
+    remove_user_from_lists(user)
+    @accepted.push(user)
+  end
+
+  def decline(user)
+    remove_user_from_lists(user)
+    @declined.push(user)
+  end
+
+  def maybe(user)
+    remove_user_from_lists(user)
+    @maybe.push(user)
+  end
+
+  private
+  def remove_user_from_lists(user)
+    @accepted.delete_if {|u| u.id == user.id }
+    @declined.delete_if {|u| u.id == user.id }
+    @maybe.delete_if {|u| u.id == user.id }
   end
 
 end
@@ -50,21 +72,21 @@ end
 
 def handle_yes(event, args)
   handle_missing(event, args) do |scheduled|
-    scheduled.accepted.push(event.user.username)
+    scheduled.accept(event.user)
     nil
   end
 end
 
 def handle_no(event, args)
   handle_missing(event, args) do |scheduled|
-    scheduled.declined.push(event.user.username)
+    scheduled.decline(event.user)
     nil
   end
 end
 
 def handle_maybe(event, args)
   handle_missing(event, args) do |scheduled|
-    scheduled.maybe.push(event.user.username)
+    scheduled.maybe(event.user)
     nil
   end
 end
@@ -76,8 +98,6 @@ def handle_delete(event, args)
   end
 end
 
-#TODO extract this logic to method which takes block
-##TODO accepting should remove from list of declines if necessary
 def handle_responses(event, args)
   handle_missing(event, args) do |scheduled|
     scheduled.responses
