@@ -2,7 +2,7 @@ require 'discordrb'
 require 'securerandom'
 require 'time'
 
-$command_prefix = :sched
+$command_prefix = :camzisawesome
 $store = {}
 
 class Event
@@ -37,12 +37,12 @@ Maybe: #{@maybe.map(&:username).join(', ')}
 
   def decline(user)
     remove_user_from_lists(user)
-    @declined.push(user)
+    @accepted.push(user)
   end
 
   def maybe(user)
     remove_user_from_lists(user)
-    @maybe.push(user)
+    @accepted.push(user)
   end
 
   private
