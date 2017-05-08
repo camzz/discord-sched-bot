@@ -66,7 +66,6 @@ def handle_create(event, args)
   end
 end
 
-#TODO remove past events
 def handle_list(event, args)
   $store.delete_if { |key, value| value.time < Time.now }
   if $store.empty?
@@ -141,7 +140,7 @@ responses
   EOF
 end
 
-bot = Discordrb::Commands::CommandBot.new token: '', client_id: 311083321994248192, prefix: '!'
+bot = Discordrb::Commands::CommandBot.new token: '', client_id: 1, prefix: '!'
 
 puts "This bot's invite URL is #{bot.invite_url}."
 puts 'Click on it to invite it to your server.'
