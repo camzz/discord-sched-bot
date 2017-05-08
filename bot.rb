@@ -6,22 +6,27 @@ $store = {}
 
 class Event
 
+  attr_reader :id, :name, :time, :accepted, :declined, :maybe
+
   def initialize(id, name, time)
     @id = id
     @name = name
     @time = time
-    @attendees = []
+    @accepted = []
+    @declined = []
+    @maybe = []
   end
 
   def to_s
-    "#{@name}(ID #{@id}) scheduled for #{@time}"
+    "#{@id}: #{@name} scheduled for #{@time}"
   end
 
-end
-
-class Attendee
-
-  def new()
+  def responses
+    <<~EOF
+Yes: #{@accepted.join(', ')}
+No: #{@declined.join(', ')}
+Maybe: #{@maybe.join(', ')}
+    EOF
   end
 
 end
@@ -44,16 +49,44 @@ end
 
 def handle_yes(event, args)
   event_id = args[1]
-
+  scheduled = $store[event_id]
+  if scheduled
+    scheduled.accepted.push(event.user.username)
+  else
+    event.respond "No event found with id #{event_id}"
+  end
 end
 
 def handle_no(event, args)
   event_id = args[1]
-
+  scheduled = $store[event_id]
+  if scheduled
+    scheduled.declined.push(event.user.username)
+  else
+    event.respond "No event found with id #{event_id}"
+  end
 end
 
 def handle_maybe(event, args)
+  event_id = args[1]
+  scheduled = $store[event_id]
+  if scheduled
+    scheduled.maybe.push(event.user.username)
+  else
+    event.respond "No event found with id #{event_id}"
+  end
+end
 
+#TODO extract this logic to method which takes block
+##TODO accepting should remove from list of declines if necessary
+def handle_responses(event, args)
+  event_id = args[1]
+  scheduled = $store[event_id]
+  if scheduled
+    event.respond scheduled.responses
+  else
+    event.respond "No event found with id #{event_id}"
+  end
 end
 
 def handle_help(event, args)
@@ -70,19 +103,12 @@ decline|no id
   Decline the event with the given id
 maybe
   Sit on the fence for the event with the given id (Don't be that guy!)
+responses
+  List the responses to the event (yes, no, maybe)
   EOF
 end
 
-# This statement creates a bot with the specified token and application ID. After this line, you can add events to the
-# created bot, and eventually run it.
-#
-# If you don't yet have a token and application ID to put in here, you will need to create a bot account here:
-#   https://discordapp.com/developers/applications/me
-# If you're wondering about what redirect URIs and RPC origins, you can ignore those for now. If that doesn't satisfy
-# you, look here: https://github.com/meew0/discordrb/wiki/Redirect-URIs-and-RPC-origins
-# After creating the bot, simply copy the token (*not* the OAuth2 secret) and the client ID and put it into the
-# respective places.
-bot = Discordrb::Commands::CommandBot.new token: 'XXX', client_id: 311083321994248192, prefix: '!'
+bot = Discordrb::Commands::CommandBot.new token: '', client_id: 311083321994248192, prefix: '!'
 
 puts "This bot's invite URL is #{bot.invite_url}."
 puts 'Click on it to invite it to your server.'
@@ -100,6 +126,8 @@ bot.command :sched do |event, *args|
     handle_no(event, args)
   when 'help'
     handle_help(event, args)
+  when 'responses'
+    handle_responses(event, args)
   else event.respond "Command not recognised"
   end
 end
