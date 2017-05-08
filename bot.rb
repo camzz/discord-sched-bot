@@ -2,6 +2,7 @@ require 'discordrb'
 require 'securerandom'
 require 'time'
 
+$command_prefix = :sched
 $store = {}
 
 class Event
@@ -54,20 +55,16 @@ Maybe: #{@maybe.map(&:username).join(', ')}
 end
 
 def handle_create(event, args)
-  puts "Passed args #{args}"
   id = SecureRandom.uuid
   name = args[1]
-  puts "Name is #{name}"
   time = Time.parse(args[2])
   $store[id] = Event.new(id, name, time)
-  puts "Time is #{time}"
-  puts "responding"
   event.respond "New event #{name} scheduled for #{time}"
 end
 
 #TODO remove past events
 def handle_list(event, args)
-  event.respond $store.values.join('\r\n')
+  event.respond $store.values.join("\n")
 end
 
 def handle_yes(event, args)
@@ -116,7 +113,7 @@ end
 
 def handle_help(event, args)
   event.respond <<~EOF
-Usage: !sched <COMMAND> <ARGS>
+Usage: !#{$command_prefix} <COMMAND> <ARGS>
 where <COMMAND> one of:
 list
   list all registered future events
@@ -140,8 +137,7 @@ bot = Discordrb::Commands::CommandBot.new token: '', client_id: 3110833219942481
 puts "This bot's invite URL is #{bot.invite_url}."
 puts 'Click on it to invite it to your server.'
 
-bot.command :sched do |event, *args|
-  puts args
+bot.command $command_prefix do |event, *args|
   case args.first
   when 'create'
     handle_create(event, args)
