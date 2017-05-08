@@ -57,14 +57,23 @@ end
 def handle_create(event, args)
   id = SecureRandom.uuid
   name = args[1]
-  time = Time.parse(args[2])
-  $store[id] = Event.new(id, name, time)
-  event.respond "New event #{name} scheduled for #{time}"
+  time = Time.parse(args[2..-1].join(' '))
+  if time < Time.now
+    event.respond "Cannot create an event in the past"
+  else
+    $store[id] = Event.new(id, name, time)
+    event.respond "New event #{name} scheduled for #{time}"
+  end
 end
 
 #TODO remove past events
 def handle_list(event, args)
-  event.respond $store.values.join("\n")
+  $store.delete_if { |key, value| value.time < Time.now }
+  if $store.empty?
+    event.respond "There are no events currently scheduled"
+  else
+    event.respond $store.values.join("\n")
+  end
 end
 
 def handle_yes(event, args)
